@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HLS Live Stream</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #1a1a1a; color: white; }
+        video { max-width: 100%; width: 800px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+    <h2>Live Dashboard Stream</h2>
+    <video id="video" controls autoplay muted></video>
+
+    <script>
+        const video = document.getElementById('video');
+        const videoSrc = '/stream/index.m3u8'; // Matches your Go server path
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                // Tweaks for lower latency
+                liveSyncDurationCount: 3, 
+                maxBufferLength: 30
+            });
+            hls.loadSource(videoSrc);
+            hls.attachMedia(video);
+        }
+        // Native support (Safari/iOS)
+        else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = videoSrc;
+        }
+    </script>
+</body>
+</html>

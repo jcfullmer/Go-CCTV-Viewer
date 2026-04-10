@@ -8,18 +8,28 @@ import (
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	RTSPurl    string
-	OutputDir  string
+	RTSPurl   string
+	Port      string
+	OutputDir string
+
 	SegmentSec int
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading the .env file")
+	}
+
 	conf := Config{
-		RTSPurl:    "rtsp://192.168.1.155:554/stream1",
-		OutputDir:  "./web/",
+		RTSPurl:    os.Getenv("RTSP_URL"),
+		Port:       os.Getenv("PORT"),
+		OutputDir:  "./web",
 		SegmentSec: 4,
 	}
 	ctx := context.Background()
@@ -28,7 +38,7 @@ func main() {
 
 	fs := http.FileServer(http.Dir(conf.OutputDir))
 	http.Handle("/stream/", http.StripPrefix("/stream/", fs))
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(conf.Port, nil))
 }
 
 func HLSWorker(ctx context.Context, conf Config) {
@@ -40,7 +50,7 @@ func HLSWorker(ctx context.Context, conf Config) {
 		default:
 			log.Printf("Starting FFmpeg for: %s", conf.RTSPurl)
 			cmd := exec.CommandContext(ctx, "ffmpeg",
-				"-rtsp_transport", "tcp", // Force TCP to prevent "smearing" artifacts
+				//"-rtsp_transport", "tcp", // Force TCP to prevent "smearing" artifacts
 				"-i", conf.RTSPurl,
 				"-c:v", "libx264", // Transcode to H.264
 				"-preset", "veryfast", // Balance CPU usage and speed
